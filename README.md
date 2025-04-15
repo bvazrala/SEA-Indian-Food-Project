@@ -69,6 +69,7 @@ Indian-Food-Catalog/
   - Event handling
   - Array methods for filtering and sorting
   - Template literals for dynamic HTML generation
+- **Pictures from**: Wikimedia Commons and Unsplash
 
 ## Why It Matters
 
