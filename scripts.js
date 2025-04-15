@@ -1,97 +1,320 @@
-/**
- * Data Catalog Project Starter Code - SEA Stage 2
- *
- * This file is where you should be doing most of your work. You should
- * also make changes to the HTML and CSS files, but we want you to prioritize
- * demonstrating your understanding of data structures, and you'll do that
- * with the JavaScript code you write in this file.
- *
- * The comments in this file are only to help you learn how the starter code
- * works. The instructions for the project are in the README. That said, here
- * are the three things you should do first to learn about the starter code:
- * - 1 - Change something small in index.html or style.css, then reload your
- *    browser and make sure you can see that change.
- * - 2 - On your browser, right click anywhere on the page and select
- *    "Inspect" to open the browser developer tools. Then, go to the "console"
- *    tab in the new window that opened up. This console is where you will see
- *    JavaScript errors and logs, which is extremely helpful for debugging.
- *    (These instructions assume you're using Chrome, opening developer tools
- *    may be different on other browsers. We suggest using Chrome.)
- * - 3 - Add another string to the titles array a few lines down. Reload your
- *    browser and observe what happens. You should see a fourth "card" appear
- *    with the string you added to the array, but a broken image.
- *
- */
+// State management
+let currentFilters = {
+  veg: false,
+  vegan: false,
+  nonveg: false,
+  nuts: false,
+  dairy: false,
+  gluten: false,
+  breakfast: false,
+  lunch: false,
+  dinner: false
+};
 
-const FRESH_PRINCE_URL =
-  "https://upload.wikimedia.org/wikipedia/en/3/33/Fresh_Prince_S1_DVD.jpg";
-const CURB_POSTER_URL =
-  "https://m.media-amazon.com/images/M/MV5BZDY1ZGM4OGItMWMyNS00MDAyLWE2Y2MtZTFhMTU0MGI5ZDFlXkEyXkFqcGdeQXVyMDc5ODIzMw@@._V1_FMjpg_UX1000_.jpg";
-const EAST_LOS_HIGH_POSTER_URL =
-  "https://static.wikia.nocookie.net/hulu/images/6/64/East_Los_High.jpg";
+let currentSort = "name-asc";
+let searchTerm = "";
+let darkMode = false;
 
-// This is an array of strings (TV show titles)
-let titles = [
-  "Fresh Prince of Bel Air",
-  "Curb Your Enthusiasm",
-  "East Los High",
-];
-// Your final submission should have much more data than this, and
-// you should use more than just an array of strings to store it all.
+// DOM manipulation functions
+function toggleTheme() {
+  darkMode = !darkMode;
+  document.body.classList.toggle('dark-theme', darkMode);
+  const themeButton = document.getElementById('theme-toggle');
+  themeButton.innerHTML = darkMode ? "☀️ Light Mode" : "🌙 Dark Mode";
+}
 
-// This function adds cards the page to display the data in the array
-function showCards() {
-  const cardContainer = document.getElementById("card-container");
-  cardContainer.innerHTML = "";
-  const templateCard = document.querySelector(".card");
+function toggleFilterPanel() {
+  const filterPanel = document.getElementById('filter-panel');
+  filterPanel.classList.toggle('hidden');
+}
 
-  for (let i = 0; i < titles.length; i++) {
-    let title = titles[i];
+function toggleFilter(type) {
+  currentFilters[type] = !currentFilters[type];
+  document.getElementById(`filter-${type}`).classList.toggle('active', currentFilters[type]);
+  refreshDisplay();
+}
 
-    // This part of the code doesn't scale very well! After you add your
-    // own data, you'll need to do something totally different here.
-    let imageURL = "";
-    if (i == 0) {
-      imageURL = FRESH_PRINCE_URL;
-    } else if (i == 1) {
-      imageURL = CURB_POSTER_URL;
-    } else if (i == 2) {
-      imageURL = EAST_LOS_HIGH_POSTER_URL;
-    }
-
-    const nextCard = templateCard.cloneNode(true); // Copy the template card
-    editCardContent(nextCard, title, imageURL); // Edit title and image
-    cardContainer.appendChild(nextCard); // Add new card to the container
+function clearFilters() {
+  for (const key in currentFilters) {
+    currentFilters[key] = false;
+    document.getElementById(`filter-${key}`).classList.remove('active');
   }
+  refreshDisplay();
 }
 
-function editCardContent(card, newTitle, newImageURL) {
-  card.style.display = "block";
-
-  const cardHeader = card.querySelector("h2");
-  cardHeader.textContent = newTitle;
-
-  const cardImage = card.querySelector("img");
-  cardImage.src = newImageURL;
-  cardImage.alt = newTitle + " Poster";
-
-  // You can use console.log to help you debug!
-  // View the output by right clicking on your website,
-  // select "Inspect", then click on the "Console" tab
-  console.log("new card:", newTitle, "- html: ", card);
+function updateSearch(value) {
+  searchTerm = value.trim().toLowerCase();
+  refreshDisplay();
 }
 
-// This calls the addCards() function when the page is first loaded
-document.addEventListener("DOMContentLoaded", showCards);
-
-function quoteAlert() {
-  console.log("Button Clicked!");
-  alert(
-    "I guess I can kiss heaven goodbye, because it got to be a sin to look this good!"
-  );
+function updateSort(value) {
+  currentSort = value;
+  refreshDisplay();
 }
 
-function removeLastCard() {
-  titles.pop(); // Remove last item in titles array
-  showCards(); // Call showCards again to refresh
+// Filter and sort functions
+function applyFilters(item) {
+  // If no filters are active, show all items
+  if (!Object.values(currentFilters).some(value => value)) {
+    return true;
+  }
+
+  // Dietary filters
+  if (currentFilters.veg && !item.isVeg) return false;
+  if (currentFilters.vegan && !item.isVegan) return false;
+  if (currentFilters.nonveg && !item.isNonveg) return false;
+  
+  // Allergen filters (note: these filters show items WITHOUT the allergen)
+  if (currentFilters.nuts && item.hasNuts) return false;
+  if (currentFilters.dairy && item.hasDairy) return false;
+  if (currentFilters.gluten && item.hasGluten) return false;
+  
+  // Meal type filters
+  const breakfastFilter = currentFilters.breakfast && item.type.includes("Breakfast");
+  const lunchFilter = currentFilters.lunch && item.type.includes("Lunch");
+  const dinnerFilter = currentFilters.dinner && item.type.includes("Dinner");
+  
+  if (currentFilters.breakfast || currentFilters.lunch || currentFilters.dinner) {
+    if (!(breakfastFilter || lunchFilter || dinnerFilter)) {
+      return false;
+    }
+  }
+  
+  return true;
 }
+
+function applySearch(item) {
+  if (!searchTerm) return true;
+  return item.name.toLowerCase().includes(searchTerm);
+}
+
+function sortItems(itemsToSort) {
+  const [property, direction] = currentSort.split('-');
+  
+  return itemsToSort.sort((a, b) => {
+    let valueA, valueB;
+    
+    switch(property) {
+      case 'name':
+        valueA = a.name;
+        valueB = b.name;
+        break;
+      case 'spice':
+        valueA = a.spiceLevel;
+        valueB = b.spiceLevel;
+        break;
+      case 'sweet':
+        valueA = a.sweetLevel;
+        valueB = b.sweetLevel;
+        break;
+      default:
+        valueA = a.name;
+        valueB = b.name;
+    }
+    
+    if (direction === 'asc') {
+      return valueA < valueB ? -1 : 1;
+    } else {
+      return valueA > valueB ? -1 : 1;
+    }
+  });
+}
+
+// Helper functions
+function generateLevelIndicator(level, emoji) {
+  let result = '';
+  for (let i = 0; i < 10; i++) {
+    if (i < level) {
+      result += `<span class="level-filled">${emoji}</span>`;
+    } else {
+      result += `<span class="level-empty">○</span>`;
+    }
+  }
+  return result;
+}
+
+function getDietaryText(item) {
+  let dietary = [];
+  if (item.isVeg) dietary.push("Vegetarian");
+  if (item.isVegan) dietary.push("Vegan");
+  if (item.isNonveg) dietary.push("Non-vegetarian");
+  return dietary.join(", ");
+}
+
+function getAllergenText(item) {
+  let allergens = [];
+  if (item.hasNuts) allergens.push("Contains Nuts");
+  if (item.hasDairy) allergens.push("Contains Dairy");
+  if (item.hasGluten) allergens.push("Contains Gluten");
+  return allergens.length ? allergens.join(", ") : "No common allergens";
+}
+
+// Display functions
+function createFoodCard(item, index) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.index = index;
+  card.addEventListener('click', () => showCardDetail(item));
+  
+  card.innerHTML = `
+    <div class="card-header">
+      <h2 title="${item.name}">${item.name}</h2>
+    </div>
+    <div class="image-container">
+      <img src="${item.image}" alt="${item.name}" onerror="this.src='./images/placeholder.jpg'">
+      <div class="expand-icon" title="Click for more details">🔍</div>
+    </div>
+    <div class="card-info">
+      <div class="info-row">
+        <div class="dietary-icons">
+          ${item.isVeg ? '<span title="Vegetarian">🥬</span>' : ''}
+          ${item.isVegan ? '<span title="Vegan">🌱</span>' : ''}
+          ${item.isNonveg ? '<span title="Non-vegetarian">🍖</span>' : ''}
+        </div>
+        <div class="allergen-icons">
+          ${item.hasNuts ? '<span title="Contains Nuts">🥜</span>' : ''}
+          ${item.hasDairy ? '<span title="Contains Dairy">🥛</span>' : ''}
+          ${item.hasGluten ? '<span title="Contains Gluten">🌾</span>' : ''}
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="meal-type">${item.type}</span>
+      </div>
+      <div class="level-container">
+        <div class="info-row">
+          <span class="spice-label">Spice:</span>
+          <div class="level-slider">
+            ${generateLevelIndicator(item.spiceLevel, '🌶️')}
+          </div>
+        </div>
+      </div>
+      <div class="level-container">
+        <div class="info-row">
+          <span class="sweet-label">Sweet:</span>
+          <div class="level-slider">
+            ${generateLevelIndicator(item.sweetLevel, '🍪')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  return card;
+}
+
+function showCardDetail(item) {
+  const detailContainer = document.getElementById('card-detail');
+  const detailContent = document.getElementById('detail-inner-content');
+  
+  detailContent.innerHTML = `
+    <div class="detail-header">
+      <h2>${item.name}</h2>
+      <p class="region-text">Region: ${item.region}</p>
+    </div>
+    
+    <img src="${item.image}" alt="${item.name}" class="detail-image" onerror="this.src='./images/placeholder.jpg'">
+    
+    <div class="detail-grid">
+      <div class="detail-item">
+        <span class="label">Dietary Type</span>
+        <span>${getDietaryText(item)}</span>
+      </div>
+      
+      <div class="detail-item">
+        <span class="label">Allergens</span>
+        <span>${getAllergenText(item)}</span>
+      </div>
+      
+      <div class="detail-item">
+        <span class="label">Meal Type</span>
+        <span>${item.type}</span>
+      </div>
+      
+      <div class="detail-item">
+        <span class="label">Region</span>
+        <span>${item.region}</span>
+      </div>
+    </div>
+    
+    <div class="detail-section">
+      <h3>Spice Level</h3>
+      <div class="level-slider detail-level">
+        ${generateLevelIndicator(item.spiceLevel, '🌶️')}
+      </div>
+    </div>
+    
+    <div class="detail-section">
+      <h3>Sweetness Level</h3>
+      <div class="level-slider detail-level">
+        ${generateLevelIndicator(item.sweetLevel, '🍪')}
+      </div>
+    </div>
+    
+    <div class="detail-section">
+      <h3>Description</h3>
+      <p>${item.description}</p>
+    </div>
+    
+    <div class="detail-section">
+      <h3>Recipe</h3>
+      <p>${item.recipe}</p>
+    </div>
+  `;
+  
+  detailContainer.style.display = 'flex';
+}
+
+function closeCardDetail() {
+  document.getElementById('card-detail').style.display = 'none';
+}
+
+// Main display function
+function refreshDisplay() {
+  const cardContainer = document.getElementById('card-container');
+  cardContainer.innerHTML = '';
+  
+  // Filter and sort the data
+  const filteredItems = foodItems
+    .filter(item => applyFilters(item))
+    .filter(item => applySearch(item));
+  
+  const sortedItems = sortItems([...filteredItems]);
+  
+  // Update count display
+  document.getElementById('item-count').textContent = `Showing ${sortedItems.length} of ${foodItems.length} items`;
+  
+  // Create and append cards
+  sortedItems.forEach((item, index) => {
+    const card = createFoodCard(item, index);
+    cardContainer.appendChild(card);
+  });
+}
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', () => {
+  refreshDisplay();
+  
+  // Close detail view when clicking outside content
+  const detailModal = document.getElementById('card-detail');
+  detailModal.addEventListener('click', (e) => {
+    if (e.target === detailModal) {
+      closeCardDetail();
+    }
+  });
+  
+  // Add keyboard event listener to close the filter panel with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const filterPanel = document.getElementById('filter-panel');
+      if (!filterPanel.classList.contains('hidden')) {
+        toggleFilterPanel();
+      }
+      
+      // Also close the detail view if it's open
+      const detailView = document.getElementById('card-detail');
+      if (detailView.style.display === 'flex') {
+        closeCardDetail();
+      }
+    }
+  });
+});

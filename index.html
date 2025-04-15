@@ -1,31 +1,87 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>LA TV Shows | Home</title>
-    <meta name="description" content="A Catalog of Shows Set in Los Angeles" />
+    <title>Indian Food Catalog</title>
+    <meta name="description" content="A Catalog of Indian food" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇮🇳</text></svg>">
     <link rel="stylesheet" href="style.css" />
+    <script type="text/javascript" src="food.js"></script>
     <script type="text/javascript" src="scripts.js"></script>
   </head>
 
   <body>
     <header class="main-header">
-      <h1 class="title">LA TV Shows</h1>
-    </header>
-    <div id="card-container"></div>
-    <div class="card" style="display: none">
-      <div class="card-content">
-        <h2>TV Show Title</h2>
-        <img src="" alt="TV Show Poster" />
-        <ul>
-          <li>Bullet Point 1</li>
-          <li>Bullet Point 2</li>
-          <li>Bullet Point 3</li>
-        </ul>
+      <div class="logo">Indian Food Catalog</div>
+      <div class="controls">
+        <div class="sort-container">
+          <label for="sort-select">Sort By: </label>
+          <select id="sort-select" onchange="updateSort(this.value)">
+            <option value="name-asc">Name (A-Z)</option>
+            <option value="name-desc">Name (Z-A)</option>
+            <option value="spice-asc">Spice Level (Low to High)</option>
+            <option value="spice-desc">Spice Level (High to Low)</option>
+            <option value="sweet-asc">Sweetness (Low to High)</option>
+            <option value="sweet-desc">Sweetness (High to Low)</option>
+          </select>
+        </div>
+        
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="Search dishes..." oninput="updateSearch(this.value)">
+        </div>
+        
+        <button id="filter-toggle" onclick="toggleFilterPanel()">
+          <span class="filter-icon">☰</span> Filter
+        </button>
+        
+        <button id="theme-toggle" onclick="toggleTheme()">
+          🌙 Dark Mode
+        </button>
       </div>
+    </header>
+    
+    <div id="filter-panel" class="hidden">
+      <button class="filter-close-btn" onclick="toggleFilterPanel()">×</button>
+      <div class="filter-section">
+        <h3>Dietary Preferences</h3>
+        <div class="filter-options">
+          <button class="filter-btn" id="filter-veg" onclick="toggleFilter('veg')">🥬 Vegetarian</button>
+          <button class="filter-btn" id="filter-vegan" onclick="toggleFilter('vegan')">🌱 Vegan</button>
+          <button class="filter-btn" id="filter-nonveg" onclick="toggleFilter('nonveg')">🍖 Non-vegetarian</button>
+        </div>
+      </div>
+      
+      <div class="filter-section">
+        <h3>Allergen-Free</h3>
+        <div class="filter-options">
+          <button class="filter-btn" id="filter-nuts" onclick="toggleFilter('nuts')">🥜 No Nuts</button>
+          <button class="filter-btn" id="filter-dairy" onclick="toggleFilter('dairy')">🥛 No Dairy</button>
+          <button class="filter-btn" id="filter-gluten" onclick="toggleFilter('gluten')">🌾 No Gluten</button>
+        </div>
+      </div>
+      
+      <div class="filter-section">
+        <h3>Meal Type</h3>
+        <div class="filter-options">
+          <button class="filter-btn" id="filter-breakfast" onclick="toggleFilter('breakfast')">🍳 Breakfast</button>
+          <button class="filter-btn" id="filter-lunch" onclick="toggleFilter('lunch')">🍲 Lunch</button>
+          <button class="filter-btn" id="filter-dinner" onclick="toggleFilter('dinner')">🍛 Dinner</button>
+        </div>
+      </div>
+      
+      <button class="clear-filters" onclick="clearFilters()">Clear All Filters</button>
     </div>
-    <div class="footer">
-      <button onclick="quoteAlert();">Get A Quote!</button>
-      <button onclick="removeLastCard();">Remove A Card!</button>
+    
+    <div class="results-status">
+      <span id="item-count">Showing 0 of 0 items</span>
+    </div>
+    
+    <div id="card-container"></div>
+    
+    <div id="card-detail">
+      <div class="detail-content">
+        <button id="close-detail" onclick="closeCardDetail()">×</button>
+        <div id="detail-inner-content"></div>
+      </div>
     </div>
   </body>
 </html>
